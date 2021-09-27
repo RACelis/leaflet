@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Leaflet Layers Tree</title>
+	<script src="lib/leaflet/leaflet.js"></script>	
+	<link rel="stylesheet" href="lib/leaflet/leaflet.css">
+	<link rel="stylesheet" href="map.css">
+	<link rel ="stylesheet" href="lib/leaflet/L.Control.Layers.Tree.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.5.1/dist/leaflet.css" />
+    <script type="text/javascript" src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js">
+	</script><script type="text/javascript" src="estados.js"></script>
+	<script type="text/javascript" src="paises.js"></script>
+	<script type="text/javascript" src="ayuntamientos.js"></script>
+	<script type="text/javascript" src="rios.js"></script>
+	<script type="text/javascript" src="vulcanos.js"></script>
+	<script type="text/javascript" src="placas.js"></script>
+    <!--link rel="stylesheet" href="../../Leaflet/dist/leaflet.css" crossorigin=""/>
+    <script src="../../Leaflet/dist/leaflet-src.js" crossorigin=""></script-->
+	
+	
+
+    <style type="text/css">
+        html, body { width: 100%; height: 100%; margin: 0; }
+        #map { width: 100%; height: 100%; }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <link rel="stylesheet" href="lib/leaflet/L.Control.Layers.Tree.css" crossorigin=""/>
+    <script src="lib/leaflet/L.Control.Layers.Tree.js"></script>
+
+    <script type="text/javascript">
+        var center = [23,-100 ];
+		
+		var osm = L.tileLayer(
+			'http://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+			{attribution: 'Map Data &copy; OpenstreetMap contributors'}); 
+
+        var map = L.map('map', {
+            layers: [osm],
+            center: center,
+            zoom: 5
+        });
+		
+		var carto = L.tileLayer("https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png",{"attribution": "\u0026copy; \u003ca href=\"http://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"http://cartodb.com/attributions\"\u003eCartoDB\u003c/a\u003e, CartoDB \u003ca href =\"http://cartodb.com/attributions\"\u003eattributions\u003c/a\u003e", 
+		"detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}).addTo(map);
+
+		var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+		minZoom: 1,
+		subdomains:['mt0','mt1','mt2','mt3']
+		}).addTo (map);
+		
+		var baseTree = {
+            label: 'Baselayer',
+            noShow: true,
+            children: [
+                {
+                    label: 'MAPAS BASE',
+                    children: [
+                        {label: 'CartoDB', layer: carto},
+						{label: 'Satélite', layer: googleSat},
+						{label: 'Open Street Map', layer: osm},
+                    ]
+                },
+             ]
+        };
+
+        var ctl = L.control.layers.tree(baseTree, null,
+            {
+                namedToggle: true,
+                collapseAll: 'Colapsar',
+                expandAll: 'Expandir',
+                collapsed: true,
+            });
+
+        ctl.addTo(map).collapseTree().expandSelected();
+
+        var hasAllUnSelected = function() {
+            return function(ev, domNode, treeNode, map) {
+                var anySelected = false;
+                function iterate(node)
+                {
+                    if (node.layer && !node.radioGroup) {
+                        anySelected = anySelected || map.hasLayer(node.layer);
+                    }
+                    if (node.children && !anySelected) {
+                        node.children.forEach(function(element) { iterate(element); });
+                    }
+                }
+                iterate(treeNode);
+                return !anySelected;
+            };
+        };
+		
+		var capas = {
+            label: 'MERCADOS CRIMINALES',
+            selectAllCheckbox: true,
+            children: [
+                /* start aiports from http://www.partow.net/miscellaneous/airportdatabase/#Download */
+				{label: 'Mapas de referencia',
+					selectAllCheckbox: true,
+					children: [
+						{label: 'División Política', children: [
+							{label: 'Estatal', layer: L.geoJson(estados)},
+							{label: 'Municipal', layer: L.geoJson(ayuntamientos)},
+						]},
+						{label: 'Vías de Comunicación', children: [
+							{label: 'Terrestre'},
+							{label: 'Marítima', layer: L.geoJson(rios)},
+							{label: 'Aérea'},
+						]},
+						{label: 'Marginación', children: [
+							{label: 'Estatal'},
+							{label: 'Municipal'},
+							{label: 'AGEBS'},
+						]},
+					]
+                },
+				
+                {label: 'Personas',
+                    selectAllCheckbox: true,
+                    children: [
+                        {label: 'Secuestros', layer: L.geoJson(vulcanos)},
+                        {label: 'Homicidios'},
+                        {label: 'Migrantes'},
+                    ]
+                },
+				{label: 'Drogas',
+                    selectAllCheckbox: true,
+                    children: [
+                        {label: 'Marihuana'},
+                        {label: 'Cocaína', layer: L.geoJson(placas)},
+                        {label: 'Fentanil'},
+                    ]
+                },
+				{label: 'Armas',
+                    selectAllCheckbox: true,
+                    children: [
+                        {label: 'Cortas'},
+                        {label: 'Largas'},
+                    ]
+                },
+
+                /*{label: 'SPAIN',
+                    selectAllCheckbox: true,
+                    children: [
+                        {label: 'ALICANTE - ALC', layer: L.marker([38.282000, -0.558000])},
+                        {label: 'ALMERIA - LEI', layer: L.marker([36.844000, -2.370000])},
+                        {label: 'AVILES - OVD', layer: L.marker([43.563000, -6.034000])},
+                        {label: 'BADAJOZ - BJZ', layer: L.marker([38.891000, -6.821000])},
+                        {label: 'BARCELONA - BCN', layer: L.marker([41.297000, 2.078000])},
+                        {label: 'BILBAO - BIO', layer: L.marker([43.301000, -2.911000])},
+                        {label: 'CORDOBA - ODB', layer: L.marker([37.842000, -4.849000])},
+                        {label: 'GERONA - GRO', layer: L.marker([41.901000, 2.760000])},
+                        {label: 'GRANADA - GRX', layer: L.marker([37.133000, -3.636000])},
+                        {label: 'GRANADA - GRX', layer: L.marker([37.189000, -3.777000])},
+                        {label: 'IBIZA - IBZ', layer: L.marker([38.873000, 1.373000])},
+                        {label: 'JEREZ - XRY', layer: L.marker([36.744000, -6.060000])},
+                        {label: 'LA CORUNA - LCG', layer: L.marker([43.302000, -8.377000])},
+                        {label: 'MADRID - MAD', layer: L.marker([40.472000, -3.561000])},
+                        {label: 'MADRID - TOJ', layer: L.marker([40.487000, -3.458000])},
+                        {label: 'MALAGA - AGP', layer: L.marker([36.674000, -4.499000])},
+                        {label: 'MENORCA - MAH', layer: L.marker([39.863000, 4.219000])},
+                        {label: 'MURCIA - MJV', layer: L.marker([37.775000, -0.812000])},
+                        {label: 'PALMA DE MALLORCA - PMI', layer: L.marker([39.550000, 2.733000])},
+                        {label: 'PAMPLONA - PNA', layer: L.marker([42.770000, -1.646000])},
+                        {label: 'REUS - REU', layer: L.marker([41.147000, 1.167000])},
+                        {label: 'SALAMANCA - SLM', layer: L.marker([40.952000, -5.502000])},
+                        {label: 'SAN SEBASTIAN - EAS', layer: L.marker([43.356000, -1.791000])},
+                        {label: 'SANTA CRUZ DE LA PALMA - SPC', layer: L.marker([28.626000, -17.756000])},
+                        {label: 'SANTANDER - SDR', layer: L.marker([43.427000, -3.820000])},
+                        {label: 'SANTIAGO - SCQ', layer: L.marker([42.896000, -8.415000])},
+                        {label: 'SEO DE URGEL - LEU', layer: L.marker([42.339000, 1.409000])},
+                        {label: 'SEVILLA - OZP', layer: L.marker([37.175000, -5.616000])},
+                        {label: 'SEVILLA - SVQ', layer: L.marker([37.418000, -5.893000])},
+                        {label: 'VALENCIA - VLC', layer: L.marker([39.489000, -0.481000])},
+                        {label: 'VALLADOLID - VLL', layer: L.marker([41.706000, -4.852000])},
+                        {label: 'VIGO - VGO', layer: L.marker([42.232000, -8.627000])},
+                        {label: 'VITORIA - VIT', layer: L.marker([42.883000, -2.724000])},
+                        {label: 'ZARAGOZA - ZAZ', layer: L.marker([41.666000, -1.041000])},
+                    ]
+                },*/                
+            ]
+        };
+        /* ends aiports */
+        var makePopups = function(node) {
+            if (node.layer) {
+                node.layer.bindPopup(node.label);
+            }
+            if (node.children) {
+                node.children.forEach(function(element) { makePopups(element); });
+            }
+        };
+        makePopups(capas);
+
+		/*function edo_style(feature) {
+			return {
+			fillColor: 'green',
+			weight: 0.9,
+			opacity: 0.8,
+			color: 'darkgreen',
+			dashArray: '1',
+			fillOpacity: 0.1
+			};
+		}*/
+		
+		ctl.setOverlayTree(capas).collapseTree(true).expandSelected(true);
+    </script>
+</body>
+</html>
